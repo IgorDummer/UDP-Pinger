@@ -5,7 +5,7 @@ import sys
 import time
 
 # Endereço IP do servidor
-host = '127.0.0.1'
+host = '168.227.188.22'
 # a porta que o servidor está
 port = 30000
 
@@ -41,17 +41,17 @@ def converteMilisegundos(rtt):
 
 def verificaMensagem(enviada, recebida):
     if len(recebida) != 40:		# Caso a mensagem recebida nao tenha 40 caracteres
-        return True
+        return 1
     elif recebida[0:5] != enviada[0:5]:  # Caso o identificador não seja o mesmo
-        return True
+        return 2
     elif recebida[5:6] != '1':  # Caso não seja um Ping
-        return True
+        return 3
     elif recebida[6:10] != enviada[6:10]:  # Caso o Timestamp nao seja o mesmo
-        return True
+        return 4
     elif recebida[10:30] != enviada[10:30]:  # Caso a mensagem do pacote seja diferente
-        return True
+        return 5
 
-    return False  # Se respeitar todas as verificações acima
+    return 0  # Se respeitar todas as verificações acima
 
 
 def main():
@@ -61,7 +61,6 @@ def main():
     tempoTotal = time.time_ns()
     for i in range(quantPing):
         rtt = time.time_ns()
-
         # Define o formato do pacote, como especificado no início do código
         id = str(i).rjust(5, '0')
         timestamp = str(int(rtt / 1000000) % 10000).rjust(4, '0')
@@ -89,12 +88,28 @@ def main():
                 msgServidor = msgServidor.decode()
                 idRecebido = int(msgServidor[0:5])
 
-            #rtt = converteMilisegundos((time.time_ns() - rtt))
             rtt = converteMilisegundos(time.time_ns() - rtt)
 
             # Se verificar e não cumprir com o padrao
-            if(verificaMensagem(msgFinal, msgServidor)):
-                print('O pacote ' + str(i+1) + ' é inválido.')
+            aux = verificaMensagem(msgFinal, msgServidor)
+            if(aux == 1):
+                print('O pacote ' + str(i+1) +
+                      ' possui mensagem com menos de 40 caracteres.')
+                continue
+            elif(aux == 2):
+                print('O pacote ' + str(i+1) +
+                      ' possui o identificador diferente do enviado.')
+                continue
+            elif(aux == 3):
+                print('O pacote ' + str(i+1) + ' não é um Ping (1).')
+                continue
+            elif(aux == 4):
+                print('O pacote ' + str(i+1) +
+                      ' possui timestamp diferente do enviado.')
+                continue
+            elif(aux == 5):
+                print('O pacote ' + str(i+1) +
+                      ' possui mensagem diferente da enviada.')
                 continue
 
             pacotesRecebidos = pacotesRecebidos + 1
